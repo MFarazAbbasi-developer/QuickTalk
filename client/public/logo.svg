@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 48 48" role="img" aria-label="QuickChat logo">
+  <style>
+    :root { --qt-primary:#4F46E5; --qt-accent:#10B981; --qt-bg:#FFFFFF; }
+    @media (prefers-color-scheme: dark){
+      :root { --qt-bg:#0B1020; }
+    }
+  </style>
+
+  <!-- Chat bubble -->
+  <rect x="2.5" y="3" width="36" height="28" rx="8" fill="var(--qt-primary)"></rect>
+  <polygon points="10,31 8,39 18,31" fill="var(--qt-primary)"></polygon>
+
+  <!-- Monogram: outer C (ring with gap) -->
+  <circle cx="20.5" cy="17" r="9.5" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="47 20"></circle>
+
+  <!-- Monogram: inner Q (accent ring + tail) -->
+  <circle cx="20.5" cy="17" r="6.2" fill="none" stroke="var(--qt-accent)" stroke-width="2.6"></circle>
+  <line x1="24.8" y1="21.4" x2="28.8" y2="25.4" stroke="var(--qt-accent)" stroke-width="2.6" stroke-linecap="round"></line>
+</svg>
