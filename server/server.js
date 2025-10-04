@@ -17,7 +17,7 @@ const databaseURL = process.env.DATABASE_URL;
 
 app.use(
   cors({
-    origin: [process.env.ORIGIN, "https://quick-talk-green.vercel.app"],
+    origin: [process.env.ORIGIN, "https://quick-talk-green.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   })
