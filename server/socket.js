@@ -8,7 +8,7 @@ const setupSocket = (server) => {
   const io = new SocketIOServer(server, {
     cors: {
       origin: [
-      process.env.ORIGIN,
+      process.env.ORIGIN, "https://quick-talk-green.vercel.app",
       "http://localhost:5173"
     ],
       methods: ["GET", "POST"],
