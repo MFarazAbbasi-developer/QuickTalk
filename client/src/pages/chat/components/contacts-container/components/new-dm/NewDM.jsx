@@ -14,13 +14,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Lottie from "lottie-react";
-import animationData from "@/assets/lottie-json";
 import { HOST, SEARCH_CONTACTS_ROUTE } from "../../../../../../utils/constants";
 import { apiClient } from "../../../../../../lib/api-client";
 import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
 import { getColor } from "../../../../../../lib/utils";
 import { useAppStore } from "../../../../../../store";
+import { MessageCircle, Search } from "lucide-react";
 
 const NewDM = () => {
   const { setSelectedChatType, setSelectedChatData } = useAppStore();
@@ -53,6 +52,7 @@ const NewDM = () => {
 
   return (
     <>
+      {/* Tooltip for add new chat */}
       <Tooltip>
         <TooltipTrigger>
           <FaPlus
@@ -61,95 +61,94 @@ const NewDM = () => {
           />
         </TooltipTrigger>
         <TooltipContent className="bg-[#1c1b1e] border-none text-white text-xs p-2 mb-2">
-          Select New Contact
+          Start New Chat
         </TooltipContent>
       </Tooltip>
 
+      {/* Modal */}
       <Dialog open={openNewContactModal} onOpenChange={setOpenNewContactModal}>
-  <DialogContent className="bg-[#0a2a6a] border border-blue-500/30 text-blue-100 w-[400px] h-[400px] flex flex-col rounded-xl shadow-2xl">
-    <DialogHeader>
-      <DialogTitle className="text-white text-lg font-semibold">
-        Please select a contact
-      </DialogTitle>
-      <DialogDescription className="text-blue-200 text-sm">
-        Search and add someone new to your chat list.
-      </DialogDescription>
-    </DialogHeader>
+        <DialogContent className="bg-gradient-to-b from-[#00184d] to-[#0a2a6a] border border-blue-500/40 text-blue-100 w-[400px] h-[430px] flex flex-col rounded-2xl shadow-[0_0_25px_rgba(37,99,235,0.25)]">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-semibold flex items-center gap-2">
+              <MessageCircle className="text-[#10B981]" size={20} />
+              Start a New Conversation
+            </DialogTitle>
+            <DialogDescription className="text-blue-200 text-sm">
+              Find and connect with someone new in QuickTalk.
+            </DialogDescription>
+          </DialogHeader>
 
-    <div>
-      <Input
-        placeholder="Search Contacts"
-        className="rounded-lg px-4 py-3 bg-[#00184d] text-white placeholder:text-blue-300 border border-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-        onChange={(e) => searchContacts(e.target.value)}
-      />
-    </div>
+          {/* Search Field */}
+          <div className="relative mt-2">
+            <Search className="absolute left-3 top-3 text-blue-300/70" size={16} />
+            <Input
+              placeholder="Search contacts..."
+              className="rounded-lg pl-9 py-3 bg-[#00184d]/60 text-white placeholder:text-blue-300 border border-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              onChange={(e) => searchContacts(e.target.value)}
+            />
+          </div>
 
-    {searchedContacts.length > 0 && (
-      <ScrollArea className="h-[250px]">
-        <div className="flex flex-col gap-3 mt-3">
-          {searchedContacts.map((contact) => (
-            <div
-              key={contact._id}
-              className="flex gap-3 items-center cursor-pointer hover:bg-blue-900/30 p-2 rounded-lg transition"
-              onClick={() => selectNewContact(contact)}
-            >
-              <div className="w-12 h-12 relative">
-                <Avatar className="h-12 w-12 rounded-full overflow-hidden">
-                  {contact.image ? (
-                    <AvatarImage
-                      src={`${HOST}/${contact.image}`}
-                      alt="profile"
-                      className="object-cover w-full h-full bg-black rounded-full"
-                    />
-                  ) : (
-                    <div
-                      className={`uppercase h-12 w-12 text-lg border-[1px] flex items-center justify-center rounded-full ${getColor(
-                        contact.color
-                      )}`}
-                    >
-                      {contact.firstName
-                        ? contact.firstName.split("").shift()
-                        : contact.email.split("").shift()}
+          {/* Search Results */}
+          {searchedContacts.length > 0 && (
+            <ScrollArea className="h-[260px] mt-3">
+              <div className="flex flex-col gap-3">
+                {searchedContacts.map((contact) => (
+                  <div
+                    key={contact._id}
+                    className="flex gap-3 items-center cursor-pointer hover:bg-blue-900/30 p-2 rounded-lg border border-transparent hover:border-blue-500/40 transition-all duration-300"
+                    onClick={() => selectNewContact(contact)}
+                  >
+                    <div className="w-12 h-12 relative">
+                      <Avatar className="h-12 w-12 rounded-full overflow-hidden">
+                        {contact.image ? (
+                          <AvatarImage
+                            src={`${HOST}/${contact.image}`}
+                            alt="profile"
+                            className="object-cover w-full h-full bg-black rounded-full"
+                          />
+                        ) : (
+                          <div
+                            className={`uppercase h-12 w-12 text-lg border-[1px] flex items-center justify-center rounded-full ${getColor(
+                              contact.color
+                            )}`}
+                          >
+                            {contact.firstName
+                              ? contact.firstName[0]
+                              : contact.email[0]}
+                          </div>
+                        )}
+                      </Avatar>
                     </div>
-                  )}
-                </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium">
+                        {contact.firstName && contact.lastName
+                          ? `${contact.firstName} ${contact.lastName}`
+                          : contact.email}
+                      </span>
+                      <span className="text-xs text-blue-300">
+                        {contact.email}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex flex-col">
-                <span className="text-white font-medium">
-                  {contact.firstName && contact.lastName
-                    ? `${contact.firstName} ${contact.lastName}`
-                    : contact.email}
-                </span>
-                <span className="text-xs text-blue-300">{contact.email}</span>
-              </div>
+            </ScrollArea>
+          )}
+
+          {/* Empty State */}
+          {searchedContacts.length <= 0 && (
+            <div className="flex-1 flex flex-col justify-center items-center mt-8 text-center text-blue-200">
+              <div className="text-6xl mb-3 animate-pulse">💬</div>
+              <h3 className="poppins-medium text-lg">
+                Looking for someone to talk?
+              </h3>
+              <p className="text-xs text-blue-300 mt-1">
+                Type a name or email above to find your next chat buddy.
+              </p>
             </div>
-          ))}
-        </div>
-      </ScrollArea>
-    )}
-
-    {searchedContacts.length <= 0 && (
-      <div className="flex-1 flex flex-col justify-center items-center mt-5 transition-all duration-1000">
-        <Lottie
-          animationData={animationData}
-          loop
-          autoplay
-          style={{ height: 100, width: 100 }}
-        />
-        <div className="text-blue-200 flex flex-col gap-2 items-center mt-5 text-center">
-          <h3 className="poppins-medium text-lg">
-            Hi<span className="text-blue-400">!</span> Search new
-            <span className="text-blue-400"> contact</span>
-          </h3>
-          <p className="text-xs text-blue-300">
-            Start typing above to find friends
-          </p>
-        </div>
-      </div>
-    )}
-  </DialogContent>
-</Dialog>
-
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

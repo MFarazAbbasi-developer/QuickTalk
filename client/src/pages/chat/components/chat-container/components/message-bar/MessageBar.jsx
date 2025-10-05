@@ -119,53 +119,54 @@ const MessageBar = () => {
   };
 
   return (
-    <div className="h-[10vh] min-h-[60px] bg-[#f9fafb] flex justify-center items-center px-8 mb-6 gap-6">
-      <div className="flex-1 flex bg-[#ffffff] border border-[#d1d5db] rounded-md items-center gap-5 pr-5 mt-1">
-        <input
-          type="text"
-          className="flex-1 text-[#1e1b4b] p-5 bg-transparent rounded-md focus:border-none focus:outline-none"
-          placeholder="Enter Message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown} // Detect Enter key
-        />
+  <div className="h-[10vh] min-h-[60px] bg-[#0a2a6a] flex justify-center items-center px-6 py-9 gap-4 border-t border-white/10 backdrop-blur-md">
+    <div className="flex-1 flex bg-white/10 border border-white/20 rounded-2xl items-center gap-4 pr-4 py-2 shadow-[0_0_10px_rgba(255,255,255,0.1)] transition-all duration-300 focus-within:shadow-[0_0_15px_rgba(59,130,246,0.4)]">
+      <input
+        type="text"
+        className="flex-1 text-white placeholder:text-white/60 bg-transparent px-4 py-3 rounded-md focus:outline-none"
+        placeholder="Type a message..."
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+      <button
+        className="text-white/70 hover:text-blue-400 transition-all duration-300"
+        onClick={handleAttachmentClick}
+      >
+        <GrAttachment className="text-2xl" />
+      </button>
+      <input
+        type="file"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleAttachmentChange}
+      />
+      <div className="relative">
         <button
-          className="text-[#6b7280] focus:border-none focus:outline-none hover:text-[#4f46e5] focus:text-[#4f46e5] duration-300 transition-all"
-          onClick={handleAttachmentClick}
+          className="text-white/70 hover:text-yellow-400 transition-all duration-300"
+          onClick={() => setEmojiPickerOpen((prev) => !prev)}
         >
-          <GrAttachment className="text-2xl" />
+          <RiEmojiStickerLine className="text-2xl" />
         </button>
-        <input
-          type="file"
-          className="hidden"
-          ref={fileInputRef}
-          onChange={handleAttachmentChange}
-        />
-        <div className="relative">
-          <button
-            className="text-[#6b7280] focus:border-none focus:outline-none hover:text-[#4f46e5] focus:text-[#4f46e5] duration-300 transition-all"
-            onClick={() => setEmojiPickerOpen(true)}
-          >
-            <RiEmojiStickerLine className="text-2xl" />
-          </button>
-          <div className="absolute bottom-16 right-0" ref={emojiRef}>
-            <EmojiPicker
-              theme="dark"
-              open={emojiPickerOpen}
-              onEmojiClick={handleAddEmoji}
-              autoFocusSearch={false}
-            />
-          </div>
+        <div className="absolute bottom-16 right-0" ref={emojiRef}>
+          <EmojiPicker
+            theme="dark"
+            open={emojiPickerOpen}
+            onEmojiClick={handleAddEmoji}
+            autoFocusSearch={false}
+          />
         </div>
       </div>
-      <button
-        className="bg-[#4f46e5] rounded-md flex items-center justify-center p-5 focus:border-none hover:bg-[#4338ca] focus:bg-[#4338ca] focus:outline-none focus:text-white duration-300 transition-all"
-        onClick={handleSendMessage}
-      >
-        <IoSend className="text-2xl" />
-      </button>
     </div>
-  );
+    <button
+      className="bg-blue-500 hover:bg-blue-600 active:scale-95 rounded-xl flex items-center justify-center p-4 transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+      onClick={handleSendMessage}
+    >
+      <IoSend className="text-2xl text-white" />
+    </button>
+  </div>
+);
+
 };
 
 export default MessageBar;

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import ChatContainer from "./components/chat-container/ChatContainer";
-import ContactsContainer from "./components/contacts-container/ContactsContainer";
 import SampleContactsContainer from "./components/contacts-container/SampleContactsContainer";
 import SampleContactsContainer2 from "./components/contacts-container/SampleContactsContainer2";
 import EmptyChatContainer from "./components/empy-chat-container/EmptyChatContainer";
@@ -62,7 +61,6 @@ useEffect(() => {
           {fileDownloadProgress}%
         </div>
       )}
-      {/* <ContactsContainer /> */}
       <SampleContactsContainer />
       <SampleContactsContainer2 />
       {selectedChatType === undefined ? (
