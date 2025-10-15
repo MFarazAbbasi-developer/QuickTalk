@@ -8,9 +8,10 @@ const setupSocket = (server) => {
   const io = new SocketIOServer(server, {
     cors: {
       origin: [
-      process.env.ORIGIN, "https://quick-talk-green.vercel.app",
-      "http://localhost:5173"
-    ],
+        process.env.ORIGIN,
+        "https://quick-talk-green.vercel.app",
+        "http://localhost:5173",
+      ],
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -97,8 +98,8 @@ const setupSocket = (server) => {
     lastMessageRecipient = lastMessageRecipient.lastMessages.find(
       (msg) => msg.withUser._id.toString() === message.sender.toString()
     );
-    console.log("Sender: ", lastMessageSender);
-    console.log("Recipient: ", lastMessageRecipient);
+    // console.log("Sender: ", lastMessageSender);
+    // console.log("Recipient: ", lastMessageRecipient);
 
     const messageData = await Message.findById(createdMessage._id)
       .populate("sender", "id email firstName lastName image color")
@@ -108,26 +109,63 @@ const setupSocket = (server) => {
       io.to(recipientSocketId).emit("receiveMessage", messageData);
       io.to(recipientSocketId).emit("lastMessage", lastMessageRecipient);
 
-      // ✅ Update message status in DB to 'delivered'
-      await Message.findByIdAndUpdate(messageData._id, { status: "delivered" });
-      await Message.findByIdAndUpdate(
-        messageData._id,
-        { $addToSet: { deliveredTo: messageData.recipient._id } }, // prevents duplicates
-        { new: true }
+      await updateMessageStatus(
+        io,
+        messageData,
+        "delivered",
+        messageData.recipient._id,
+        senderSocketId,
+        false
       );
-      console.log("id: ", messageData.recipient._id);
-      // ✅ Notify sender about delivery
-      io.to(senderSocketId).emit("messageStatusUpdate", {
-        messageId: messageData._id,
-        status: "delivered",
-        chatId: messageData.recipient._id,
-        isChannel: false,
-        userId: messageData.recipient._id,
-      });
     }
     if (senderSocketId) {
       io.to(senderSocketId).emit("receiveMessage", messageData);
       io.to(senderSocketId).emit("lastMessage", lastMessageSender);
+    }
+  };
+
+  const handleMessageStatusUpdateFromClient = async (params) => {
+    const { messageId, chatId, isChannel, status, userId } = params;
+    const messageData = await Message.findById(messageId);
+    if (!messageData) return;
+    const senderSocketId = userSocketMap.get(messageData.sender.toString());
+    if (!senderSocketId) return;
+    await updateMessageStatus(
+      io,
+      messageData,
+      status,
+      userId,
+      senderSocketId,
+      isChannel
+    );
+  };
+  const updateMessageStatus = async (
+    io,
+    messageData,
+    status,
+    userId,
+    senderSocketId,
+    isChannel = false
+  ) => {
+    try {
+      // ✅ Update DB
+      await Message.findByIdAndUpdate(messageData._id, { status });
+      await Message.findByIdAndUpdate(
+        messageData._id,
+        { $addToSet: { [`${status}To`]: userId } }, // e.g. deliveredTo, readBy
+        { new: true }
+      );
+
+      // ✅ Notify sender (so they can update UI)
+      io.to(senderSocketId).emit("messageStatusUpdate", {
+        messageId: messageData._id,
+        status,
+        chatId: userId,
+        isChannel,
+        userId,
+      });
+    } catch (err) {
+      console.error("Error updating message status:", err);
     }
   };
 
@@ -186,22 +224,15 @@ const setupSocket = (server) => {
             ...channel.lastMessage,
             channelId,
           });
-          console.log("First member delivered to: ", member._id);
+          // console.log("First member delivered to: ", member._id);
 
-          // Update deliveredTo
-          await Message.findByIdAndUpdate(createdMessage._id, {
-            $addToSet: { deliveredTo: member._id },
-          });
-
-          // Notify sender
-          const senderSocketId = userSocketMap.get(sender.toString());
-          if (senderSocketId) {
-            io.to(senderSocketId).emit("messageStatusUpdate", {
-              messageId: createdMessage._id,
-              memberId: member._id,
-              status: "delivered",
-            });
-          }
+          await updateChannelMessageStatus(
+            io,
+            createdMessage._id,
+            member._id,
+            sender,
+            "delivered"
+          );
         }
       });
 
@@ -213,23 +244,58 @@ const setupSocket = (server) => {
           channelId,
         });
 
-        // Update deliveredTo for admin
-        await Message.findByIdAndUpdate(createdMessage._id, {
-          $addToSet: { deliveredTo: channel.admin._id },
-        });
-        console.log("Admin Id: ", channel.admin._id);
-
-        // Notify sender about admin delivery
-        const senderSocketId = userSocketMap.get(sender.toString());
-        if (senderSocketId) {
-          io.to(senderSocketId).emit("messageStatusUpdate", {
-            messageId: createdMessage._id,
-            memberId: channel.admin._id,
-            status: "delivered",
-          });
-        }
+        await updateChannelMessageStatus(
+          io,
+          createdMessage._id,
+          channel.admin._id,
+          sender,
+          "delivered"
+        );
       }
       // console.log({ ...channel.lastMessage, channelId });
+    }
+  };
+
+  const handleChannelMessageStatusUpdateFromClient = async (params) => {
+    const { messageId, channelId, status, userId } = params;
+
+    const messageData = await Message.findById(messageId);
+    if (!messageData) return;
+    // const senderSocketId = userSocketMap.get(messageData.sender.toString());
+    // if (!senderSocketId) return;
+
+    await updateChannelMessageStatus(
+            io,
+            messageId,
+            userId,
+            messageData.sender,
+            status
+          );
+  };
+
+  const updateChannelMessageStatus = async (
+    io,
+    messageId,
+    memberId,
+    senderId,
+    status
+  ) => {
+    // 1️⃣ Update DB (delivered/read arrays)
+    const updateField =
+      status === "delivered"
+        ? { $addToSet: { deliveredTo: memberId } }
+        : { $addToSet: { readBy: memberId } };
+
+    await Message.findByIdAndUpdate(messageId, updateField);
+
+    // 2️⃣ Notify sender about status change
+    const senderSocketId = userSocketMap.get(senderId.toString());
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageStatusUpdate", {
+        messageId,
+        memberId,
+        status,
+      });
     }
   };
 
@@ -283,12 +349,16 @@ const setupSocket = (server) => {
           // Notify sender about read status
           const senderSocketId = userSocketMap.get(msg.sender.toString());
           if (senderSocketId) {
+            const user = await User.findById(userId).select(
+              "email firstName lastName image color"
+            );
+            console.log("Message read by: ", user);
             io.to(senderSocketId).emit("messageStatusUpdate", {
               messageId: msg._id,
               status: "read",
               chatId: msg.channelId._id,
               isChannel: true,
-              userId,
+              userId: user,
             });
           }
         }
@@ -312,7 +382,7 @@ const setupSocket = (server) => {
       // For setting Message status as delievered when user gets online
       const undeliveredMessages = await Message.find({
         deliveredTo: { $ne: userId },
-      }).populate("channelId", "members recipientId");
+      }).populate("channelId", "members admin recipientId");
       // console.log("Undelivered Messages: ", undeliveredMessages.length);
 
       const filteredMessages = undeliveredMessages.filter((msg) => {
@@ -321,7 +391,11 @@ const setupSocket = (server) => {
           return true;
         }
         // case 2: Channel
-        if (msg.channelId && msg.channelId.members.includes(userId)) {
+        if (
+          msg.channelId &&
+          (msg.channelId.members.includes(userId) ||
+            msg.channelId.admin.toString() === userId.toString())
+        ) {
           return true;
         }
         return false;
@@ -340,7 +414,8 @@ const setupSocket = (server) => {
           io.to(senderSocketId).emit("messageStatusUpdate", {
             messageId: msg._id,
             status: "delivered",
-            chatId: msg.recipient?._id || msg.channelId?._id,
+            chatId: msg.recipient ? msg.recipient._id : msg.channelId?._id,
+            isChannel: !!msg.channelId,
             userId,
           });
         }
@@ -350,7 +425,15 @@ const setupSocket = (server) => {
     }
 
     socket.on("sendMessage", sendMessage);
+    socket.on(
+      "messageStatusUpdateFromClient",
+      handleMessageStatusUpdateFromClient
+    );
     socket.on("send-channel-message", sendChannelMessage);
+    socket.on(
+      "markChannelMessageAsRead",
+      handleChannelMessageStatusUpdateFromClient
+    );
 
     socket.on("setMessageStatus", setMessageStatus);
 

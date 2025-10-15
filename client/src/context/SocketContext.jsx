@@ -40,6 +40,14 @@ export const SocketProvider = ({ children }) => {
             selectedChatData._id === message.recipient?._id)
         ) {
           addMessage(message);
+          // ✅ Send read receipt instantly
+          socket.current.emit("messageStatusUpdateFromClient", {
+            messageId: message._id,
+            chatId: selectedChatData._id,
+            isChannel: false,
+            status: "read",
+            userId: userInfo.id,
+          });
         }
         addContactsInDMContacts(message);
       };
@@ -78,6 +86,24 @@ export const SocketProvider = ({ children }) => {
           selectedChatData._id === message.channelId
         ) {
           addMessage(message);
+
+          // ✅ Send read receipt instantly
+    socket.current.emit("messageStatusUpdateFromClient", {
+      
+      chatId: selectedChatData._id,
+      isChannel: false,
+      
+    });
+
+    // 2. Emit "mark as read" event (only if user is not the sender)
+    if (message.sender._id !== userInfo.id) {
+      socket.current.emit("markChannelMessageAsRead", {
+        messageId: message._id,
+        channelId: message.channelId,
+        status: "read",
+        userId: userInfo.id,
+      });
+    }
         }
         addChannelInChannelList(message);
       };
@@ -116,15 +142,15 @@ export const SocketProvider = ({ children }) => {
       // 6. Message status update (single)
       const handleMessageStatusUpdate = ({
         messageId,
-        isChannel,
-        chatId,
         status,
+        chatId,
+        isChannel,
         userId,
       }) => {
         const { setMessageStatuses, messageStatuses } = useAppStore.getState();
 
         setMessageStatuses(messageId, isChannel, chatId, status, userId);
-        console.log("Done: ", messageStatuses)
+        console.log("Done: ", messageStatuses);
         // if (!isChannel) {
         //   // 1-on-1
         //   setMessageStatuses(messageId, status, userId);
@@ -133,7 +159,6 @@ export const SocketProvider = ({ children }) => {
         //   setMessageStatuses(messageId, status, chatId);
         // }
       };
-
 
       // -----------------------------
       // Register socket events

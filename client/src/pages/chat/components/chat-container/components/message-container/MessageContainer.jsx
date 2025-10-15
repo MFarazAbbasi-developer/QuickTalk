@@ -14,7 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { getColor } from "../../../../../../lib/utils";
 import { toast } from "sonner";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
-import { Info } from "lucide-react";
+import { Info, User } from "lucide-react";
+import { XCircle } from "lucide-react";
 
 import {
   Dialog,
@@ -40,7 +41,14 @@ const MessageContainer = () => {
 
   const [showImage, setShowImage] = useState(false);
   const [imageURL, setImageURL] = useState(null);
-  const [openStatus, setOpenStatus] = useState(false);
+
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenInfo = (msg) => {
+    setSelectedMessage(msg);
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     const getMessages = async () => {
@@ -50,7 +58,8 @@ const MessageContainer = () => {
           { id: selectedChatData._id },
           { withCredentials: true }
         );
-        if (response.data.messages) setSelectedChatMessages(response.data.messages);
+        if (response.data.messages)
+          setSelectedChatMessages(response.data.messages);
       } catch (error) {
         console.log(error);
       }
@@ -62,7 +71,8 @@ const MessageContainer = () => {
           `${GET_CHANNEL_MESSAGES_ROUTE}/${selectedChatData._id}`,
           { withCredentials: true }
         );
-        if (response.data.messages) setSelectedChatMessages(response.data.messages);
+        if (response.data.messages)
+          setSelectedChatMessages(response.data.messages);
       } catch (error) {
         console.log(error);
       }
@@ -79,7 +89,8 @@ const MessageContainer = () => {
   }, [selectedChatMessages]);
 
   const checkIfImage = (filePath) => {
-    const imageRegex = /\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|ico|heic|heif)$/i;
+    const imageRegex =
+      /\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|ico|heic|heif)$/i;
     return imageRegex.test(filePath);
   };
 
@@ -110,30 +121,46 @@ const MessageContainer = () => {
   const renderDMMessages = (message) => {
     const renderMessageStatus = () => {
       let messageStatus = "sent";
-      if (messageStatuses[selectedChatData._id] && messageStatuses[selectedChatData._id][message._id]) {
-        messageStatus = messageStatuses[selectedChatData._id][message._id].readBy.includes(message.recipient)
+      if (
+        messageStatuses[selectedChatData._id] &&
+        messageStatuses[selectedChatData._id][message._id]
+      ) {
+        messageStatus = messageStatuses[selectedChatData._id][
+          message._id
+        ].readBy.includes(message.recipient)
           ? "read"
-          : messageStatuses[selectedChatData._id][message._id].deliveredTo.includes(message.recipient)
+          : messageStatuses[selectedChatData._id][
+              message._id
+            ].deliveredTo.includes(message.recipient)
           ? "delivered"
           : "sent";
       } else {
         messageStatus =
-          message.readBy.find((x) => x._id === message.recipient)?._id !== undefined
+          message.readBy.find((x) => x._id === message.recipient)?._id !==
+          undefined
             ? "read"
-            : message.deliveredTo.find((x) => x._id === message.recipient)?._id !== undefined
+            : message.deliveredTo.find((x) => x._id === message.recipient)
+                ?._id !== undefined
             ? "delivered"
             : "sent";
       }
 
       if (message.sender !== userInfo.id) return null;
-      if (messageStatus === "read") return <BsCheckAll className="inline text-blue-400 ml-2 text-lg" />;
-      else if (messageStatus === "delivered") return <BsCheckAll className="inline text-gray-400 ml-2 text-lg" />;
-      else if (messageStatus === "sent") return <BsCheck className="inline text-gray-400 ml-2 text-lg" />;
+      if (messageStatus === "read")
+        return <BsCheckAll className="inline text-blue-400 ml-2 text-lg" />;
+      else if (messageStatus === "delivered")
+        return <BsCheckAll className="inline text-gray-400 ml-2 text-lg" />;
+      else if (messageStatus === "sent")
+        return <BsCheck className="inline text-gray-400 ml-2 text-lg" />;
       return null;
     };
 
     return (
-      <div className={`${message.sender === selectedChatData._id ? "text-left" : "text-right"}`}>
+      <div
+        className={`${
+          message.sender === selectedChatData._id ? "text-left" : "text-right"
+        }`}
+      >
         {message.messageType === "text" && (
           <div
             className={`${
@@ -161,7 +188,13 @@ const MessageContainer = () => {
                   setImageURL(message.fileUrl);
                 }}
               >
-                <img src={`${HOST}/${message.fileUrl}`} height={300} width={300} alt="image" className="rounded-lg" />
+                <img
+                  src={`${HOST}/${message.fileUrl}`}
+                  height={300}
+                  width={300}
+                  alt="image"
+                  className="rounded-lg"
+                />
               </div>
             ) : (
               <div className="flex items-center justify-center gap-4">
@@ -190,7 +223,9 @@ const MessageContainer = () => {
   const renderChannelMessages = (message) => {
     return (
       <div
-        className={`mt-5 ${message.sender._id !== userInfo.id ? "text-left" : "text-right"}`}
+        className={`mt-5 ${
+          message.sender._id !== userInfo.id ? "text-left" : "text-right"
+        }`}
       >
         {message.messageType === "text" && (
           <div
@@ -220,7 +255,13 @@ const MessageContainer = () => {
                   setImageURL(message.fileUrl);
                 }}
               >
-                <img src={`${HOST}/${message.fileUrl}`} height={300} width={300} alt="image" className="rounded-lg" />
+                <img
+                  src={`${HOST}/${message.fileUrl}`}
+                  height={300}
+                  width={300}
+                  alt="image"
+                  className="rounded-lg"
+                />
               </div>
             ) : (
               <div className="flex items-center justify-center gap-4">
@@ -260,18 +301,26 @@ const MessageContainer = () => {
               </AvatarFallback>
             </Avatar>
             <span className="text-sm text-white/90">{`${message.sender.firstName} ${message.sender.lastName}`}</span>
-            <span className="text-xs text-gray-400">{moment(message.createdAt).format("LT")}</span>
+            <span className="text-xs text-gray-400">
+              {moment(message.createdAt).format("LT")}
+            </span>
           </div>
         ) : (
           <div className="text-xs text-gray-400 mt-1">
             {moment(message.createdAt).format("LT")}
             {message.sender._id === userInfo.id && (
-              <button onClick={() => setOpenStatus(true)}>
+              <button onClick={() => handleOpenInfo(message)}>
                 <Info className="w-4 h-4 text-gray-400 hover:text-white transition-all" />
               </button>
             )}
           </div>
         )}
+        {/* {isModalOpen && selectedMessage && (
+  <MessageInfoModal 
+    message={selectedMessage} 
+    onClose={() => setIsModalOpen(false)} 
+  />
+)} */}
       </div>
     );
   };
@@ -294,6 +343,131 @@ const MessageContainer = () => {
         </div>
       );
     });
+  };
+
+  const MessageInfoModal = () => {
+    let currentMessage = selectedMessage;
+    // let temp = 1;
+    let tempId = currentMessage.sender._id.toString();
+    if (
+      messageStatuses[selectedChatData._id] &&
+      messageStatuses[selectedChatData._id][selectedMessage?._id]
+    ) {
+      currentMessage = messageStatuses[selectedChatData._id][selectedMessage?._id];
+      // temp = 0;
+    }
+    currentMessage = {
+      ...currentMessage,
+      readBy: currentMessage.readBy.filter((u) => (u._id ? u._id.toString() : u.toString()) !== tempId),
+      deliveredTo: currentMessage.deliveredTo.filter((u) => (u._id ? u._id.toString() : u.toString()) !== tempId),
+    };
+    console.log("Selected ", currentMessage);
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+        <div className="bg-[#0a2a6a]/90 text-white w-[90%] max-w-md rounded-2xl shadow-[0_0_25px_rgba(59,130,246,0.4)] p-6 relative animate-fadeIn">
+          <h2 className="text-xl font-semibold text-center mb-4 border-b border-white/10 pb-2">
+            Message Info
+          </h2>
+
+          <div className="space-y-5">
+            {/* Seen Section */}
+            <div>
+              <h3 className="text-blue-400 mb-2 font-medium">Seen by</h3>
+              {currentMessage.readBy?.length > 0 ? (
+                <div className="flex flex-col gap-3 max-h-40 overflow-y-auto custom-scrollbar pr-2">
+                  {currentMessage.readBy
+                    .filter((user) => user?._id !== currentMessage.sender?._id)
+                    .map((user) => (
+                      <div
+                        key={user._id * Math.random()}
+                        className="flex items-center gap-3 bg-white/10 rounded-lg p-2 hover:bg-white/20 transition"
+                      > {console.log("user id: ", user.email)}
+                        {user.image ? (
+                          <img
+                            src={`${HOST}/${user.image}`}
+                            alt={user.firstName}
+                            className="w-8 h-8 rounded-full object-cover border border-white/20"
+                          />
+                        ) : (
+                          <div
+                            className={`uppercase w-8 h-8 rounded-full flex items-center justify-center text-base font-semibold ${getColor(
+                              user.color
+                            )}`}
+                          >
+                            {user.firstName
+                              ? user.firstName?.charAt(0)
+                              : user.email?.charAt(0)}
+                          </div>
+                        )}
+                        <span className="text-sm">
+                          {user.firstName} {user.lastName}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-sm text-white/60">No one has seen yet</p>
+              )}
+            </div>
+
+            {/* Delivered Section */}
+            <div>
+              <h3 className="text-blue-400 mb-2 font-medium">Delivered to</h3>
+              {currentMessage.deliveredTo?.length > 0 ? (
+                <div className="flex flex-col gap-3 max-h-40 overflow-y-auto custom-scrollbar pr-2">
+                  {currentMessage.deliveredTo
+                    .filter(
+                      (user) =>
+                        !currentMessage.readBy?.some((u) => u._id === user._id)
+                    )
+                    .map((user) => (
+                      <div
+                        key={user._id}
+                        className="flex items-center gap-3 bg-white/10 rounded-lg p-2 hover:bg-white/20 transition"
+                      >
+                        {user.image ? (
+                          <img
+                            src={`${HOST}/${user.image}`}
+                            alt={user.firstName}
+                            className="w-8 h-8 rounded-full object-cover border border-white/20"
+                          />
+                        ) : (
+                          <div
+                            className={`uppercase w-8 h-8 rounded-full flex items-center justify-center text-base font-semibold ${getColor(
+                              user.color
+                            )}`}
+                          >
+                            {user.firstName
+                              ? user.firstName?.charAt(0)
+                              : user.email?.charAt(0)}
+                          </div>
+                        )}
+                        <span className="text-sm">
+                          {user.firstName} {user.lastName}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-sm text-white/60">No delivery info yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Close Button */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              title="Close Chat"
+              className="p-2 rounded-full text-blue-300 hover:text-white hover:bg-blue-500/20
+          transition-all duration-300 ease-in-out focus:ring-2 focus:ring-blue-500/40 absolute top-4 right-4"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -329,6 +503,8 @@ const MessageContainer = () => {
           </div>
         )}
       </div>
+
+      {isModalOpen && selectedMessage && <MessageInfoModal />}
     </div>
   );
 };
