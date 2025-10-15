@@ -56,7 +56,7 @@ const SampleContactsContainer = () => {
 
         {isOpen && (
           <h2 className="text-white font-semibold text-lg tracking-wide">
-            Quick<span className="text-[#10B981]">Chat</span>
+            Quick<span className="text-[#10B981]">Talk</span>
           </h2>
         )}
       </div>
